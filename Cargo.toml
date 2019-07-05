@@ -1,0 +1,14 @@
+[package]
+name = "tokio-ctrlc-error"
+version = "0.1.0"
+authors = ["Marcin Mielniczuk <marmistrz.dev@zoho.eu>"]
+edition = "2018"
+
+[dependencies]
+failure = "0.1.5"
+futures = "0.1.28"
+tokio-signal = "0.2.7"
+
+[dev-dependencies]
+tokio-timer = "0.2.11"
+tokio = "0.1.22"
