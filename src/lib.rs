@@ -6,8 +6,10 @@
 //!
 //! # Examples
 //! ```
+//!     use std::time::Duration;
 //!     use futures::prelude::*;
 //!     use tokio_ctrlc_error::AsyncCtrlc;
+//!
 //!     fn lengthy_task() -> impl Future<Item = (), Error = failure::Error> {
 //!         futures::future::ok(())
 //!     }
@@ -30,14 +32,15 @@ where
     F: Future,
 {
     /// Intercept ctrl+c during execution and return an error in such case.
-    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error>>;
+    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send>;
 }
 
 impl<F> AsyncCtrlc<F> for F
 where
-    F: Future<Error = failure::Error> + 'static,
+    F: Future<Error = failure::Error> + 'static + Send,
+    F::Item: Send,
 {
-    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error>> {
+    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send> {
         let ctrlc = tokio_signal::ctrl_c()
             .flatten_stream()
             .into_future()

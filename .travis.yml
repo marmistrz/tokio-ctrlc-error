@@ -1,0 +1,12 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+cache: cargo
+before_script:
+  - rustup component add rustfmt
+script:
+  - cargo build --examples
+  - cargo test
+  - cargo fmt -- --check
