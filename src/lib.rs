@@ -24,8 +24,8 @@ use failure::Fail;
 use futures::{future::Either, prelude::*};
 
 #[derive(Debug, Fail)]
-#[fail(display = "interrupt received")]
-pub struct InterruptedError;
+#[fail(display = "keyboard interrupt")]
+pub struct KeyboardInterrupt;
 
 pub trait AsyncCtrlc<F>
 where
@@ -54,7 +54,7 @@ where
             })
             .and_then(|res| match res {
                 Either::A((r, _)) => Ok(r),
-                Either::B(_) => Err(InterruptedError.into()),
+                Either::B(_) => Err(KeyboardInterrupt.into()),
             });
         Box::new(fut)
     }
