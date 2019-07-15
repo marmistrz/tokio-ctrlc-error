@@ -59,3 +59,39 @@ where
         Box::new(fut)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::AsyncCtrlc;
+    use futures::prelude::*;
+
+    // Test if it compiles when used with the multi-threaded runtime
+    #[test]
+    fn test_send_future() {
+        use tokio::runtime::Runtime;
+        fn get_fut() -> Box<dyn Future<Item = (), Error = failure::Error> + Send> {
+            let f = futures::future::ok(());
+            Box::new(f)
+        }
+
+        let future = get_fut().handle_ctrlc();
+        let mut rt = Runtime::new().unwrap();
+        rt.block_on(future).unwrap();
+    }
+
+    // Test if it compiles when used with the single-threaded runtime
+
+    #[test]
+    fn test_non_send_future() {
+        use tokio::runtime::current_thread::Runtime;
+        fn get_fut() -> Box<dyn Future<Item = (), Error = failure::Error>> {
+            let f = futures::future::ok(());
+            Box::new(f)
+        }
+
+        let future = get_fut().handle_ctrlc();
+        let mut rt = Runtime::new().unwrap();
+        rt.block_on(future).unwrap();
+    }
+
+}
