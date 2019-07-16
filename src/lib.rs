@@ -22,25 +22,52 @@
 
 use failure::Fail;
 use futures::{future::Either, prelude::*};
+use tokio_signal::{IoStream, IoFuture};
+use std::marker::PhantomData;
 
 #[derive(Debug, Fail)]
 #[fail(display = "keyboard interrupt")]
 pub struct KeyboardInterrupt;
 
-pub trait AsyncCtrlc<F>
+struct CtrlcAsError<F, E> where F: Future, E: From<KeyboardInterrupt> {
+    ctrlc: IoStream<()>,
+    future: F,
+    phantom: PhantomData<E>
+}
+
+impl<F, E> CtrlcAsError<F, E> where F: Future, E: From<KeyboardInterrupt> {
+    fn from_future(future: F) -> Self {
+        Self {
+            ctrlc: Box::new(tokio_signal::ctrl_c().flatten_stream()),
+            future,
+            phantom: PhantomData
+        }
+    }
+}
+
+impl<F, E> Future for CtrlcAsError<F, E>  where F: Future, E: From<KeyboardInterrupt> {
+    type Item = ();
+    type Error = E;
+    fn poll(&mut self) {
+
+    }
+}
+
+/*
+pub trait FutureExt<F>
 where
     F: Future,
 {
     /// Intercept ctrl+c during execution and return an error in such case.
-    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send>;
+    fn ctrlc_as_error(self) -> CtrlcAsError<F>;
 }
 
-impl<F> AsyncCtrlc<F> for F
+impl<F> FutureExt<F> for F
 where
     F: Future<Error = failure::Error> + 'static + Send,
     F::Item: Send,
 {
-    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send> {
+    fn ctrlc_as_error(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send> {
         let ctrlc = tokio_signal::ctrl_c()
             .flatten_stream()
             .into_future()
@@ -58,4 +85,4 @@ where
             });
         Box::new(fut)
     }
-}
+}*/

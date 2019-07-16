@@ -1,5 +1,5 @@
 [package]
-name = "tokio-ctrlc-error"
+name = "tokio-ctrlc-as-error"
 version = "0.1.0"
 authors = ["Marcin Mielniczuk <marmistrz.dev@zoho.eu>"]
 edition = "2018"
