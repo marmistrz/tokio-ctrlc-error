@@ -21,42 +21,50 @@
 //! ```
 
 use failure::Fail;
-use futures::{future::Either, prelude::*};
+use futures::{FlattenStream, prelude::*};
+use tokio_signal::{IoFuture, IoStream};
 
 #[derive(Debug, Fail)]
 #[fail(display = "keyboard interrupt")]
 pub struct KeyboardInterrupt;
+
+pub struct CatchCtrlC<F> {
+    work: F,
+    ctrl_c: FlattenStream<IoFuture<IoStream<()>>>,
+}
 
 pub trait AsyncCtrlc<F>
 where
     F: Future,
 {
     /// Intercept ctrl+c during execution and return an error in such case.
-    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send>;
+    fn handle_ctrlc(self) -> CatchCtrlC<F>;
 }
 
-impl<F> AsyncCtrlc<F> for F
-where
-    F: Future<Error = failure::Error> + 'static + Send,
-    F::Item: Send,
-{
-    fn handle_ctrlc(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send> {
-        let ctrlc = tokio_signal::ctrl_c()
-            .flatten_stream()
-            .into_future()
-            .map_err(|_| ());
+impl<F: Future + 'static> AsyncCtrlc<F> for F {
+    fn handle_ctrlc(self) -> CatchCtrlC<F> {
+        let ctrl_c = tokio_signal::ctrl_c().flatten_stream();
+        let work = self;
 
-        let fut = self
-            .select2(ctrlc)
-            .map_err(|e| match e {
-                Either::A((e, _)) => e,
-                _ => panic!("ctrl+c handling failed"),
-            })
-            .and_then(|res| match res {
-                Either::A((r, _)) => Ok(r),
-                Either::B(_) => Err(KeyboardInterrupt.into()),
-            });
-        Box::new(fut)
+        CatchCtrlC { work, ctrl_c }
+    }
+}
+
+impl<F: Future> Future for CatchCtrlC<F>
+where
+    F::Error: From<KeyboardInterrupt> + From<std::io::Error>,
+{
+    type Item = F::Item;
+    type Error = F::Error;
+
+    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
+        match (self.work.poll(), self.ctrl_c.poll()) {
+            (Err(e), _) => Err(e),
+            (_, Err(e)) => Err(e.into()),
+            (Ok(Async::Ready(v)), _) => Ok(Async::Ready(v)),
+            (_, Ok(Async::Ready(_))) => Err(KeyboardInterrupt.into()),
+            (Ok(Async::NotReady), Ok(Async::NotReady)) => Ok(Async::NotReady),
+        }
     }
 }
 
