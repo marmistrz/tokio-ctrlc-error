@@ -21,68 +21,71 @@
 //! ```
 
 use failure::Fail;
-use futures::{future::Either, prelude::*};
-use tokio_signal::{IoStream, IoFuture};
+use futures::prelude::*;
 use std::marker::PhantomData;
+use tokio_signal::{IoFuture, IoStream};
 
 #[derive(Debug, Fail)]
 #[fail(display = "keyboard interrupt")]
 pub struct KeyboardInterrupt;
 
-struct CtrlcAsError<F, E> where F: Future, E: From<KeyboardInterrupt> {
+pub struct CtrlcAsError<F, E>
+where
+    F: Future,
+    E: From<KeyboardInterrupt> + From<F::Error>,
+{
     ctrlc: IoStream<()>,
     future: F,
-    phantom: PhantomData<E>
+    phantom: PhantomData<E>,
 }
 
-impl<F, E> CtrlcAsError<F, E> where F: Future, E: From<KeyboardInterrupt> {
+impl<F, E> CtrlcAsError<F, E>
+where
+    F: Future,
+    E: From<KeyboardInterrupt> + From<F::Error>,
+{
     fn from_future(future: F) -> Self {
         Self {
             ctrlc: Box::new(tokio_signal::ctrl_c().flatten_stream()),
             future,
-            phantom: PhantomData
+            phantom: PhantomData,
         }
     }
 }
 
-impl<F, E> Future for CtrlcAsError<F, E>  where F: Future, E: From<KeyboardInterrupt> {
-    type Item = ();
-    type Error = E;
-    fn poll(&mut self) {
-
-    }
-}
-
-/*
-pub trait FutureExt<F>
+impl<F, E> Future for CtrlcAsError<F, E>
 where
     F: Future,
+    E: From<KeyboardInterrupt> + From<F::Error>,
 {
-    /// Intercept ctrl+c during execution and return an error in such case.
-    fn ctrlc_as_error(self) -> CtrlcAsError<F>;
+    type Error = E;
+    type Item = F::Item;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        let ctrlc_fut = self.ctrlc.poll().expect("ctrlc handling failed");
+        if ctrlc_fut.is_ready() {
+            Err(KeyboardInterrupt.into())
+        } else {
+            self.future.poll().map_err(Into::into)
+        }
+    }
 }
 
-impl<F> FutureExt<F> for F
+pub trait FutureExt<F, E>
 where
-    F: Future<Error = failure::Error> + 'static + Send,
-    F::Item: Send,
+    F: Future,
+    E: From<KeyboardInterrupt> + From<F::Error>,
 {
-    fn ctrlc_as_error(self) -> Box<dyn Future<Item = F::Item, Error = F::Error> + Send> {
-        let ctrlc = tokio_signal::ctrl_c()
-            .flatten_stream()
-            .into_future()
-            .map_err(|_| ());
+    /// Intercept ctrl+c during execution and return an error in such case.
+    fn ctrlc_as_error(self) -> CtrlcAsError<F, E>;
+}
 
-        let fut = self
-            .select2(ctrlc)
-            .map_err(|e| match e {
-                Either::A((e, _)) => e,
-                _ => panic!("ctrl+c handling failed"),
-            })
-            .and_then(|res| match res {
-                Either::A((r, _)) => Ok(r),
-                Either::B(_) => Err(KeyboardInterrupt.into()),
-            });
-        Box::new(fut)
+impl<F, E> FutureExt<F, E> for F
+where
+    F: Future<Error = failure::Error> + 'static,
+    E: From<KeyboardInterrupt> + From<F::Error>,
+{
+    fn ctrlc_as_error(self) -> CtrlcAsError<F, E> {
+        CtrlcAsError::from_future(self)
     }
-}*/
+}
