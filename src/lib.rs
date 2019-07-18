@@ -23,8 +23,8 @@
 //! # Usage notes
 //! `ctrlc_as_error` has the same semantics as `select` and will return either
 //! the result of the future or an `KeyboardInterrupt` error, whichever occurs
-//! first. In particular, the interrupt is intercepted **only for those futures**
-//! in the chain that precede the call. For example:
+//! first. In particular, the interrupt is intercepted **only for those futures
+//! in the chain that precede the call**. For example:
 //!
 //! ```
 //!     use futures::prelude::*;
@@ -57,6 +57,7 @@ pub struct KeyboardInterrupt;
 pub struct IoError(std::io::Error);
 
 pub struct CtrlcAsError<F> {
+    // we will switch to `struct CtrlC` in tokio 0.3
     ctrlc: FlattenStream<IoFuture<IoStream<()>>>,
     future: F,
 }
