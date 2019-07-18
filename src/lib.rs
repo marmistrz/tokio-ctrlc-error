@@ -8,13 +8,13 @@
 //! # Examples
 //! ```
 //!     use futures::prelude::*;
-//!     use tokio_ctrlc_error::AsyncCtrlc;
+//!     use tokio_ctrlc_error::FutureExt;
 //!
 //!     fn lengthy_task() -> impl Future<Item = (), Error = failure::Error> {
 //!         futures::future::ok(())
 //!     }
 //!
-//!     let task = lengthy_task().handle_ctrlc();
+//!     let task = lengthy_task().ctrlc_as_error();
 //!     let mut rt = tokio::runtime::Runtime::new().unwrap();
 //!     let res = rt.block_on(task);
 //!     println!("{:?}", res);
@@ -27,15 +27,17 @@
 //! in the chain that precede the call**. For example:
 //!
 //! ```
+//!     use std::time::Duration;
 //!     use futures::prelude::*;
-//!     use tokio_ctrlc_error::AsyncCtrlc;
+//!     use tokio_ctrlc_error::FutureExt;
 //!
 //!     fn sleep() -> impl Future<Item = (), Error = failure::Error> {
-//!         tokio_timer::sleep(Duration::from_secs(5)).from_err()
+//!         // The sleep is very short, so that the tests don't take too much time
+//!         tokio_timer::sleep(Duration::from_millis(1)).from_err()
 //!     }
 //!
 //!     let task = sleep()
-//!         .handle_ctrlc()
+//!         .ctrlc_as_error()
 //!         .and_then(|_| sleep());
 //!     let mut rt = tokio::runtime::Runtime::new().unwrap();
 //!     let res = rt.block_on(task);
