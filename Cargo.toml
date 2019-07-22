@@ -5,9 +5,9 @@ authors = ["Marcin Mielniczuk <marmistrz.dev@zoho.eu>"]
 edition = "2018"
 
 [dependencies]
-failure = "0.1.5"
-futures = "0.1.28"
-tokio-signal = "0.2.7"
+failure = "0.1"
+futures = "0.1"
+tokio-signal = "0.2"
 
 [dev-dependencies]
 tokio-timer = "0.2.11"
