@@ -1,7 +1,7 @@
 use failure::Fallible;
 use futures::prelude::*;
 use std::time::Duration;
-use tokio_ctrlc_error::{FutureExt, KeyboardInterrupt};
+use tokio_ctrlc_error::{AsyncCtrlc, KeyboardInterrupt};
 use tokio_timer;
 
 fn lengthy_task() -> impl Future<Item = (), Error = failure::Error> {

@@ -8,7 +8,7 @@
 //! # Examples
 //! ```
 //!     use futures::prelude::*;
-//!     use tokio_ctrlc_error::FutureExt;
+//!     use tokio_ctrlc_error::AsyncCtrlc;
 //!
 //!     fn lengthy_task() -> impl Future<Item = (), Error = failure::Error> {
 //!         futures::future::ok(())
@@ -29,7 +29,7 @@
 //! ```
 //!     use std::time::Duration;
 //!     use futures::prelude::*;
-//!     use tokio_ctrlc_error::FutureExt;
+//!     use tokio_ctrlc_error::AsyncCtrlc;
 //!
 //!     fn sleep() -> impl Future<Item = (), Error = failure::Error> {
 //!         // The sleep is very short, so that the tests don't take too much time
@@ -81,12 +81,12 @@ where
     }
 }
 
-pub trait FutureExt<F: Future> {
+pub trait AsyncCtrlc<F: Future> {
     /// Intercept ctrl+c during execution and return an error in such case.
     fn ctrlc_as_error(self) -> CtrlcAsError<F>;
 }
 
-impl<F: Future> FutureExt<F> for F
+impl<F: Future> AsyncCtrlc<F> for F
 where
     F::Error: From<KeyboardInterrupt> + From<IoError>,
 {
@@ -100,7 +100,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::FutureExt;
+    use super::AsyncCtrlc;
     use futures::prelude::*;
 
     // Test if it compiles when used with the multi-threaded runtime
