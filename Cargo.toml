@@ -3,6 +3,11 @@ name = "tokio-ctrlc-error"
 version = "0.1.0"
 authors = ["Marcin Mielniczuk <marmistrz.dev@zoho.eu>"]
 edition = "2018"
+license = "AGPL-3.0"
+repository = "https://github.com/marmistrz/tokio-ctrlc-error"
+description = "Easy handling of keyboard interrupts with tokio"
+keywords = ["tokio", "ctrlc", "keyboard", "interrupt"]
+
 
 [dependencies]
 failure = "0.1"
