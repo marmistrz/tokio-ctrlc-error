@@ -130,5 +130,4 @@ mod tests {
         let mut rt = Runtime::new().unwrap();
         rt.block_on(future).unwrap();
     }
-
 }
