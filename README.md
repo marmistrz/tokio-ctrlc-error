@@ -1,6 +1,6 @@
 # tokio-ctrlc-error 
 [![Build Status](https://travis-ci.org/marmistrz/tokio-ctrlc-error.svg?branch=master)](https://travis-ci.org/marmistrz/tokio-ctrlc-error)
-[![Docs](https://docs.rs/tokio-ctrlc-error/badge.svg)](https://docs.rs/tokio-ctrlc-error/badge.svg)
+[![Docs](https://docs.rs/tokio-ctrlc-error/badge.svg)](https://docs.rs/tokio-ctrlc-error)
 [![crates-io-badge]][crates-io]
 
 [crates-io-badge]: https://img.shields.io/badge/crates.io-v0.1.0-orange.svg?longCache=true
